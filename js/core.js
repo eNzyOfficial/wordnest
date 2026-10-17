@@ -1,5 +1,5 @@
 // Shared helpers: storage, settings, word card, history, toast.
-const APP_VERSION = '2';
+const APP_VERSION = '3';
 
 const store = {
   get(key, fallback) {

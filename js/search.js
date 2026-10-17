@@ -26,7 +26,10 @@ const search = {
     const total = data.meta[dictId].chunks.length;
     let n = data.chunkFor(dictId, k);
     for (let loaded = 0; n < total && loaded < 3; n++, loaded++) {
-      const chunk = await data.index(dictId, n);
+      // Only the first chunk is required; later ones may be missing offline.
+      let chunk;
+      try { chunk = await data.index(dictId, n); }
+      catch (e) { if (loaded === 0) throw e; break; }
       let i = lowerBound(chunk, k);
       for (; i < chunk.length && chunk[i][0].startsWith(k); i++) add(chunk[i]);
       if (i < chunk.length) break;
@@ -43,7 +46,7 @@ const search = {
     const n = data.chunkFor(dictId, k);
     const total = data.meta[dictId].chunks.length;
     const pool = [];
-    for (let i = Math.max(0, n - 1); i <= Math.min(total - 1, n + 1); i++) pool.push(...await data.index(dictId, i));
+    for (let i = Math.max(0, n - 1); i <= Math.min(total - 1, n + 1); i++) pool.push(...await data.index(dictId, i).catch(() => []));
     const top = await data.top(dictId);
     for (const list of Object.values(top)) pool.push(...list);
     const max = k.length <= 4 ? 1 : 2;

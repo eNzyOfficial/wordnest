@@ -12,6 +12,7 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/'
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'test-shots')
 os.makedirs(OUT, exist_ok=True)
 errors = []
+offline_flag = [False]
 checks = []
 
 
@@ -30,7 +31,9 @@ with sync_playwright() as p:
                               color_scheme='light', locale='en-US')
     page = ctx.new_page()
     page.on('pageerror', lambda e: errors.append(str(e)))
-    page.on('console', lambda m: m.type == 'error' and errors.append(m.text))
+    # While offline, the browser logs a failed load for chunks that were never downloaded; that is expected.
+    page.on('console', lambda m: m.type == 'error' and not (offline_flag[0] and 'Failed to load resource' in m.text)
+            and errors.append(m.text + ' @ ' + str(m.location.get('url'))))
 
     page.goto(BASE)
     page.wait_for_selector('.wotd-word', timeout=15000)
@@ -157,6 +160,7 @@ with sync_playwright() as p:
     page.goto(BASE + '#/w/en-th/house')
     page.wait_for_selector('.entry .hw', timeout=10000)
     ctx.set_offline(True)
+    offline_flag[0] = True
     page.reload()
     page.wait_for_selector('.entry .hw', timeout=10000)
     check('word page loads offline after first visit', page.locator('.entry .hw').inner_text() == 'house')
