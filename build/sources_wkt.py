@@ -141,6 +141,12 @@ def english_entries(path, keep):
                     ex.append(clean(e['text']))
                 if len(ex) >= 2:
                     break
+            if not ex and len(senses) < 3:
+                # No made-up example: use the shortest dated quotation instead.
+                quotes = sorted((clean(e['text']) for e in s.get('examples', [])
+                                 if e.get('type') == 'quotation' and e.get('text') and 25 <= len(e['text']) <= 180), key=len)
+                if quotes:
+                    ex.append(quotes[0])
             sense = {'d': gloss}
             if ex:
                 sense['ex'] = ex

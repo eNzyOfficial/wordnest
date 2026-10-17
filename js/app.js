@@ -68,17 +68,39 @@ async function openExamples(dictId, key) {
 
 // ---------------------------------------------------------------- search box
 let typingTimer;
-q.addEventListener('input', () => {
+q.addEventListener('input', e => {
   syncClear();
   clearTimeout(typingTimer);
+  if (e.isComposing) return;  // wait for the keyboard to finish composing
+  onQuery();
+});
+q.addEventListener('compositionend', onQuery);
+function onQuery() {
   const v = q.value;
   updatePairDirection(v);
-  if (!v.trim()) { if (current.view === 'suggest') route(); return; }
+  if (!v.trim()) {
+    // Empty box: show the home screen in place. Do not re-run the router, which
+    // would put the current word back into the box.
+    views.suggestToken++;
+    if (current.view === 'suggest') {
+      // Point the address at home too (without re-routing), so opening the same word again works
+      // and Back still returns to the word page.
+      if (location.hash && location.hash !== '#/') history.pushState(null, '', '#/');
+      show('home'); views.home($('#v-home'));
+    }
+    return;
+  }
   if (current.view !== 'suggest') show('suggest');
   typingTimer = setTimeout(() => views.suggest($('#v-suggest'), v), 60);
-});
+}
 q.addEventListener('focus', () => {
-  if (current.view === 'word' && q.value) { q.select(); show('suggest'); views.suggest($('#v-suggest'), q.value); }
+  // Keep the caret at the end so backspace erases one letter at a time.
+  if (current.view === 'word' && q.value) {
+    const n = q.value.length;
+    requestAnimationFrame(() => { try { q.setSelectionRange(n, n); } catch {} });
+    show('suggest');
+    views.suggest($('#v-suggest'), q.value);
+  }
 });
 $('#searchForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -86,12 +108,16 @@ $('#searchForm').addEventListener('submit', async e => {
   if (!v) return;
   q.blur();
   const rows = await search.suggest(settings.get('dict'), v, 1).catch(() => []);
-  if (rows.length) location.hash = `#/w/${encodeURIComponent(settings.get('dict'))}/${encodeURIComponent(rows[0][0])}`;
+  if (rows.length) go(`#/w/${encodeURIComponent(settings.get('dict'))}/${encodeURIComponent(rows[0][0])}`);
   else views.suggest($('#v-suggest'), v);
 });
 $('#clearBtn').addEventListener('click', () => { q.value = ''; syncClear(); q.focus(); updatePairDirection('');
   if (current.view === 'suggest') { show('home'); views.home($('#v-home')); }
 });
+// Navigate, re-rendering even when the address is already this page.
+function go(hash) {
+  if (location.hash === hash) route(); else location.hash = hash;
+}
 function syncClear() { $('#clearBtn').classList.toggle('hidden', !q.value); }
 
 // ---------------------------------------------------------------- dictionary picker
@@ -140,15 +166,19 @@ $('#topAction').onclick = () => {
 // ---------------------------------------------------------------- clicks inside views
 document.addEventListener('click', async e => {
   const t = e.target;
+  // A link to the page the address already shows: hashchange will not fire, so route directly.
+  const same = t.closest('a[href^="#/"]');
+  if (same && same.getAttribute('href') === location.hash) { e.preventDefault(); route(); return; }
+
   const link = t.closest('[data-route]');
   if (link) { e.preventDefault(); location.hash = link.dataset.route; closeDrawer(); return; }
 
   const spk = t.closest('.spk');
   if (spk) {
     e.preventDefault(); e.stopPropagation();
+    if (spk.closest('.ex, .sx, .wotd-ex')) { speech.playSentence(spk.dataset.say, spk.dataset.lang, spk.dataset.audio, spk); return; }
     const owner = spk.closest('.entry-head') ? current.entry : (speechCache.get(spk.closest('.row, .wotd-body')) || null);
-    const recs = spk.closest('.ex, .sx') ? null : owner?.au;
-    speech.play(spk.dataset.say, spk.dataset.lang, spk.dataset.region ?? settings.get('accent'), recs, spk);
+    speech.play(spk.dataset.say, spk.dataset.lang, spk.dataset.region ?? settings.get('accent'), owner?.au, spk);
     return;
   }
 
@@ -195,7 +225,7 @@ $('#v-word').addEventListener('change', e => {
 async function lookup(word) {
   const dictId = settings.get('dict');
   const rows = await search.suggest(dictId, word, 1).catch(() => []);
-  if (rows.length && rows[0][0] === norm(word)) location.hash = `#/w/${encodeURIComponent(dictId)}/${encodeURIComponent(rows[0][0])}`;
+  if (rows.length && rows[0][0] === norm(word)) go(`#/w/${encodeURIComponent(dictId)}/${encodeURIComponent(rows[0][0])}`);
   else { q.value = word; syncClear(); show('suggest'); views.suggest($('#v-suggest'), word); }
 }
 

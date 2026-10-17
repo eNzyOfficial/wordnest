@@ -18,6 +18,8 @@ The same information is shown in the app under Menu > Sources and licences
 | Thai WordNet (NICT), via Open Multilingual Wordnet 2.0 | Extra Thai equivalents for English WordNet senses | WordNet-style permissive licence | No | "Thai WordNet Copyright 2011 by the National Institute of Information and Communications Technology (NICT). All rights reserved." plus the notice in `licences/thai-wordnet.txt` |
 | CMUdict | US pronunciations (ARPAbet converted to IPA) when Wiktionary has none | BSD-style | No | Notice in `licences/cmudict.txt` |
 | Tatoeba | Example sentences (English, English-Thai pairs) | CC BY 2.0 FR | No | "Sentences from Tatoeba (https://tatoeba.org), CC BY 2.0 FR" |
+| SCB-MT-EN-TH-2020 (VISTEC, SCB), clean subsets only: task_master_1, generated_reviews_*, assorted_government | English-Thai example sentences | CC BY-SA 4.0 | Yes | "scb-mt-en-th-2020 by VISTEC / SCB (airesearch.in.th), CC BY-SA 4.0" |
+| Tatoeba sentence recordings (linked, not bundled) | Human voice for English example sentences, streamed when online | Per recording: CC BY-NC-ND 3.0, CC BY-NC 4.0, CC BY 4.0, CC BY-SA 4.0 or CC0 | No | Speaker name and licence shown under each recorded example, linking to their Tatoeba profile. Played unmodified in a free, non-commercial app; recordings with no reuse licence are skipped. If the app is ever monetised, drop the NC/ND recordings. |
 | ALT Parallel Corpus (NICT, via OPUS) | English-Thai example sentences | CC BY 4.0 | No | "Asian Language Treebank (ALT) Parallel Corpus, NICT, CC BY 4.0, via OPUS (https://opus.nlpl.eu)" |
 | FrequencyWords (Hermit Dave), 2018 en and th 50k lists | Ranking suggestions, frequency stars, word of the day | CC BY-SA 4.0 (content) | Yes | "FrequencyWords by Hermit Dave, CC BY-SA 4.0, https://github.com/hermitdave/FrequencyWords" |
 | Wikimedia Commons audio (linked, not bundled) | Recorded pronunciations, streamed when online | Per file (mostly CC BY-SA) | Per file | Played from upload.wikimedia.org; each file page on Commons names its author and licence. Offline, the device's own voice is used instead. |
@@ -31,6 +33,8 @@ The same information is shown in the app under Menu > Sources and licences
 - Thai WordNet: https://github.com/omwn/omw-data/releases/download/v2.0/omw-th-2.0.tar.xz
 - CMUdict: https://raw.githubusercontent.com/cmusphinx/cmudict/master/cmudict.dict
 - Tatoeba: https://downloads.tatoeba.org/exports/per_language/ (eng_sentences, tha_sentences, eng-tha and tha-eng links)
+- SCB-MT-EN-TH-2020: https://github.com/vistec-AI/dataset-releases/releases/download/scb-mt-en-th-2020_v1.0/scb-mt-en-th-2020.zip (106 MB)
+- Tatoeba recordings list: https://downloads.tatoeba.org/exports/sentences_with_audio.tar.bz2
 - ALT: https://object.pouta.csc.fi/OPUS-ALT/v20191206/moses/en-th.txt.zip
 - FrequencyWords: https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_50k.txt and .../th/th_50k.txt
 
@@ -43,7 +47,7 @@ The same information is shown in the app under Menu > Sources and licences
 ## Considered and left out
 
 - LEXiTRON (NECTEC): no published licence; redistribution needs written permission.
-- SCB-MT-EN-TH-2020: CC BY-SA 4.0 overall, but several sub-corpora carry their own upstream terms. Could be added later using only the clean subsets.
+- SCB-MT-EN-TH-2020 subsets with their own upstream terms (paracrawl, nus_sms, msr_paraphrase, mozilla_common_voice, wikipedia, thai_websites, apdf).
 - OpenSubtitles and TED parallel text: unclear or no-derivatives terms.
 - Royal Institute dictionary: copyrighted.
 - Bundled Commons audio: possible later with per-file credits; for now audio is streamed and the device voice is the offline fallback.

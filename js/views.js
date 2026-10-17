@@ -166,6 +166,10 @@ const views = {
         <label class="set-row"><span>Show examples under definitions</span><span class="switch"><input type="checkbox" data-toggle="examples" ${settings.get('examples') ? 'checked' : ''}><i></i></span></label>
         <label class="set-row"><span>Keep screen on</span><span class="switch"><input type="checkbox" data-toggle="keepScreen" ${settings.get('keepScreen') ? 'checked' : ''}><i></i></span></label>
         <a class="set-row link" href="#/offline"><span>Offline dictionaries</span>${icon('chev', 'chev')}</a></div>
+      <div class="set-group"><div class="set-title">Voice</div>
+        <p class="set-note">Words and many English example sentences play real recordings when you are online. Otherwise your device reads them aloud with the voice below. For the most natural sound, install an "Enhanced" or "Premium" voice in your phone's accessibility settings.</p>
+        <div class="set-row"><span>English</span><span class="voice-pick"><select id="voiceEn" aria-label="English voice"></select><button class="spk" data-test="en" aria-label="Test English voice">${icon('speak')}</button></span></div>
+        <div class="set-row"><span>Thai</span><span class="voice-pick"><select id="voiceTh" aria-label="Thai voice"></select><button class="spk" data-test="th" aria-label="Test Thai voice">${icon('speak')}</button></span></div></div>
       <div class="set-group"><div class="set-title">Your data</div>
         <p class="set-note">Your Word card and history are stored only on this device.</p>
         <button class="set-row danger" id="clearHistory">Clear search history</button>
@@ -181,6 +185,26 @@ const views = {
       $$('button', s).forEach(x => x.classList.toggle('on', x === b));
     }));
     $$('[data-toggle]', el).forEach(c => c.addEventListener('change', () => { settings.set(c.dataset.toggle, c.checked); if (c.dataset.toggle === 'keepScreen') { $('#keepScreen').checked = c.checked; keepAwake(); } }));
+    const fillVoices = () => {
+      for (const [id, lang, key] of [['#voiceEn', settings.get('accent') === 'uk' ? 'en-GB' : 'en-US', 'voiceEn'], ['#voiceTh', 'th-TH', 'voiceTh']]) {
+        const sel = $(id, el);
+        if (!sel) continue;
+        const list = speech.voices(lang);
+        const best = list[0];
+        sel.innerHTML = list.length
+          ? `<option value="">Best available${best ? ` (${esc(best.name)})` : ''}</option>` + list.map(v => `<option value="${esc(v.voiceURI)}">${esc(v.name)}${v.localService ? '' : ' (online)'}</option>`).join('')
+          : '<option value="">No voice installed</option>';
+        sel.value = settings.get(key) || '';
+        sel.onchange = () => settings.set(key, sel.value);
+      }
+    };
+    fillVoices();
+    try { speechSynthesis.addEventListener('voiceschanged', fillVoices, { once: true }); } catch {}
+    $$('[data-test]', el).forEach(b => b.onclick = e => {
+      e.stopPropagation();
+      const th = b.dataset.test === 'th';
+      speech.say(th ? 'สวัสดีครับ ยินดีที่ได้รู้จัก' : 'Hello! This is how example sentences will sound.', th ? 'th' : 'en', settings.get('accent'), b, true);
+    });
     $('#clearHistory', el).onclick = () => { if (confirm('Clear all search history?')) { recent.clear(); toast('History cleared'); } };
     $('#clearCards', el).onclick = () => { if (confirm('Remove all words from your Word card?')) { cards.clear(); toast('Word card cleared'); } };
     $('#exportCards', el).onclick = () => {

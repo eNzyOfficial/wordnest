@@ -11,6 +11,8 @@ Python 3.9+ standard library only. Raw downloads live outside the repo:
       cmudict/cmudict.dict
       tatoeba/eng_sentences.tsv.bz2, tha_sentences.tsv.bz2, tha-eng_links.tsv.bz2, eng-tha_links.tsv.bz2
       opus/alt/ALT.en-th.en, ALT.en-th.th
+      scb/scb-mt-en-th-2020/*.csv  SCB-MT release zip, unzipped
+      tatoeba/sentences_with_audio.csv
       freq/en_50k.txt, th_50k.txt  FrequencyWords 2018
 
 URLs are in ../DATA_SOURCES.md. Then:

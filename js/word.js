@@ -1,7 +1,7 @@
 // Word detail page.
 const SRC_NAMES = {
   wkt: 'Wiktionary', wktr: 'Wiktionary', vol: 'Volubilis', thwn: 'Thai WordNet', wn: 'WordNet',
-  tat: 'Tatoeba', alt: 'ALT corpus', cmu: 'CMUdict', mix: '',
+  tat: 'Tatoeba', alt: 'ALT corpus', scbd: 'SCB-MT (dialogues)', scbr: 'SCB-MT (reviews)', scbg: 'SCB-MT (government)', cmu: 'CMUdict', mix: '',
 };
 const POS_ABBR = {
   noun: 'n.', verb: 'v.', adj: 'adj.', adv: 'adv.', pron: 'pron.', prep: 'prep.', conj: 'conj.', interj: 'interj.',
@@ -37,14 +37,19 @@ function stars(n) {
   return `<span class="stars" aria-label="${n === 2 ? 'Very common' : 'Common'} word">${'<i></i>'.repeat(n)}</span>`;
 }
 
-function exampleRow(ex, entry, i) {
-  const [a, b, src] = ex;
+const LIC_NAMES = { ncnd3: 'CC BY-NC-ND 3.0', nc4: 'CC BY-NC 4.0', by4: 'CC BY 4.0', bysa4: 'CC BY-SA 4.0', cc0: 'CC0' };
+
+function exampleRow(ex, entry) {
+  let [a, b, src, audio] = ex;
+  // On Thai word pages the Thai sentence goes first and is read by the Thai voice.
+  if (entry.l === 'th' && b && !isThai(a) && isThai(b)) { [a, b] = [b, a]; audio = null; }
   const la = isThai(a) ? 'th' : 'en';
   const marks = headwordMarks(entry);
+  const credit = audio ? `, voice by <a href="https://tatoeba.org/en/user/profile/${encodeURIComponent(audio[1])}" target="_blank" rel="noopener">${esc(audio[1])}</a> (${esc(LIC_NAMES[audio[2]] || audio[2])})` : '';
   return `<li class="ex">
-    <button class="spk sm" data-say="${esc(a)}" data-lang="${la}" aria-label="Listen">${icon('speak')}</button>
+    <button class="spk sm${audio ? ' rec' : ''}" data-say="${esc(a)}" data-lang="${la}"${audio ? ` data-audio="${audio[0]}"` : ''} aria-label="Listen">${icon('speak')}</button>
     <div><div class="ex-a">${tappable(a, la, marks)}</div>${b ? `<div class="ex-b">${tappable(b, isThai(b) ? 'th' : 'en', marks)}</div>` : ''}
-    ${src ? `<div class="ex-src">${esc(SRC_NAMES[src] || src)}</div>` : ''}</div></li>`;
+    ${src ? `<div class="ex-src">${esc(SRC_NAMES[src] || src)}${credit}</div>` : ''}</div></li>`;
 }
 
 function senseHtml(s, n, entry, showSrc) {
@@ -80,7 +85,8 @@ function renderWord(dictId, key, entry) {
   let defs = '';
   let n = 0;
   (entry.b || []).forEach((block, bi) => {
-    const title = block.src !== 'mix' && (entry.b.length > 1 || bi > 0) ? `<div class="blk-title">${esc(SRC_NAMES[block.src])}</div>` : '';
+    const label = block.title || (block.src !== 'mix' && (entry.b.length > 1 || bi > 0) ? SRC_NAMES[block.src] : '');
+    const title = label ? `<div class="blk-title">${esc(label)}</div>` : '';
     defs += `<div class="blk${bi > 0 ? ' more' : ''}">${title}`;
     for (const p of block.p) {
       n = 0;
@@ -97,11 +103,10 @@ function renderWord(dictId, key, entry) {
   const cls = entry.cl?.length ? `<div class="sec"><h3>Classifier</h3><div class="chips">${entry.cl.map(c => `<a class="chip" data-lookup="${esc(c)}">${esc(c)}</a>`).join('')}</div></div>` : '';
   const syn = entry.syn?.length ? `<div class="sec"><h3>Synonyms</h3><div class="chips">${entry.syn.map(c => `<a class="chip" data-lookup="${esc(c)}">${esc(c)}</a>`).join('')}</div></div>` : '';
   const ant = entry.ant?.length ? `<div class="sec"><h3>Antonyms</h3><div class="chips">${entry.ant.map(c => `<a class="chip ant" data-lookup="${esc(c)}">${esc(c)}</a>`).join('')}</div></div>` : '';
-  const exs = entry.ex?.length ? `<div class="sec"><h3>Example sentences</h3><ul class="exlist">${entry.ex.slice(0, 3).map((e, i) => exampleRow(e, entry, i)).join('')}</ul></div>` : '';
+  const exs = entry.ex?.length ? `<div class="sec"><h3>Example sentences</h3><ul class="exlist">${entry.ex.slice(0, 3).map(e => exampleRow(e, entry)).join('')}</ul></div>` : '';
   const ety = entry.ety ? `<details class="sec acc"><summary>Origin ${icon('down', 'chev')}</summary><p class="ety">${esc(entry.ety)}</p></details>` : '';
   const srcs = [...new Set([...(entry.src || []), ...(entry.b || []).map(b => b.src)].filter(s => s && s !== 'mix').map(s => SRC_NAMES[s]))];
-  if (entry.ex?.some(e => e[2] === 'tat')) srcs.push('Tatoeba');
-  if (entry.ex?.some(e => e[2] === 'alt')) srcs.push('ALT corpus');
+  for (const e of entry.ex || []) srcs.push((SRC_NAMES[e[2]] || e[2]).replace(/ \(.*\)$/, ''));
 
   return `<article class="entry${settings.get('examples') ? '' : ' no-ex'}" data-l="${entry.l}">
     <div class="entry-head">
@@ -130,7 +135,7 @@ function renderExamples(entry) {
     list.push(Array.isArray(x) ? [x[0], x[1], s.src || b.src] : [x, '', b.src]);
   }
   return `<div class="subhead">${esc(entry.w)} <span>${list.length} examples</span></div>
-    <ul class="exlist big">${list.map((e, i) => exampleRow(e, entry, i)).join('') || '<li class="empty">No examples yet.</li>'}</ul>`;
+    <ul class="exlist big">${list.map(e => exampleRow(e, entry)).join('') || '<li class="empty">No examples yet.</li>'}</ul>`;
 }
 
 function exampleCount(entry) {

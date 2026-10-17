@@ -17,7 +17,11 @@ SOURCES = [
     ('CMUdict', 'https://github.com/cmusphinx/cmudict', 'BSD-style', None,
      'US pronunciations where Wiktionary has none (converted from ARPAbet to IPA). Notice below.'),
     ('Tatoeba', 'https://tatoeba.org', 'CC BY 2.0 FR', 'https://creativecommons.org/licenses/by/2.0/fr/',
-     'Example sentences in English and English-Thai pairs, by Tatoeba contributors.'),
+     'Example sentences in English and English-Thai pairs, by Tatoeba contributors. '
+     'Recorded sentences are played from tatoeba.org when you are online and are not stored in the app; each one names its speaker and licence '
+     '(CC BY-NC-ND 3.0, CC BY-NC 4.0, CC BY 4.0, CC BY-SA 4.0 or CC0). Recordings without a reuse licence are never used.'),
+    ('SCB-MT-EN-TH-2020', 'https://github.com/vistec-AI/dataset-releases/releases/tag/scb-mt-en-th-2020_v1.0', 'CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/',
+     'English-Thai example sentences by VISTEC and SCB (airesearch.in.th). Only the task_master_1 dialogue, generated_reviews and assorted_government subsets are used.'),
     ('ALT Parallel Corpus (NICT)', 'https://opus.nlpl.eu/ALT/en&th/v20191206/ALT', 'CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/',
      'English-Thai example sentences from the Asian Language Treebank parallel corpus, via OPUS.'),
     ('FrequencyWords', 'https://github.com/hermitdave/FrequencyWords', 'CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/',

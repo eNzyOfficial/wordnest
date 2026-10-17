@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import norm, is_thai  # noqa: E402
 import sources_en  # noqa: E402
 import sources_wkt  # noqa: E402
+import examples  # noqa: E402
 from xlsx import rows as xlsx_rows  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -146,54 +147,6 @@ def load_thai_wordnet(path):
 
 
 # ---------------------------------------------------------------- examples
-
-def tokenise_en(s):
-    return set(re.findall(r"[a-z]+(?:'[a-z]+)?", s.lower()))
-
-
-class Examples:
-    """Short example sentences indexed by English word and by Thai substring."""
-
-    def __init__(self):
-        self.by_en = defaultdict(list)    # word -> [(len, en, th, src)]
-        self.pairs = []                   # (th, en, src) for Thai lookups
-
-    def add_pair(self, en, th, src, per_word=4):
-        if len(en) > 140:
-            return
-        for tok in tokenise_en(en):
-            lst = self.by_en[tok]
-            if len(lst) < 40:
-                lst.append((len(en), en, th, src))
-        if th:
-            self.pairs.append((th, en, src))
-
-    def for_en(self, word, n=3, want_th=True):
-        w = word.lower()
-        if ' ' in w:
-            first = w.split()[0]
-            cands = [c for c in self.by_en.get(first, []) if w in c[1].lower()]
-        else:
-            cands = self.by_en.get(w, [])
-        cands = [c for c in cands if (bool(c[2]) == want_th) or (want_th is None)]
-        cands.sort(key=lambda c: (abs(c[0] - 50), c[1]))
-        return [[c[1], c[2], c[3]] for c in cands[:n]]
-
-    def build_thai_index(self):
-        self.th_text = [p for p in self.pairs if p[0]]
-
-    def for_th(self, word, n=3):
-        if len(word) < 3:
-            return []
-        out = []
-        for th, en, src in self.th_text:
-            if word in th and len(th) < 100:
-                out.append([th, en, src])
-                if len(out) >= n * 3:
-                    break
-        out.sort(key=lambda e: len(e[0]))
-        return out[:n]
-
 
 # ---------------------------------------------------------------- writing
 
@@ -315,8 +268,7 @@ def main():
     wkt_th = list(sources_wkt.thai_entries(R('kaikki', 'thai.jsonl.gz')))
     log('wiktionary thai', len(wkt_th))
 
-    # Examples: Tatoeba (eng-tha pairs + English-only) and ALT (eng-tha).
-    ex = Examples()
+    # Example sentences, indexed by English word and by segmented Thai word.
     eng, tha, pairs = sources_en.load_tatoeba(R('tatoeba', 'eng_sentences.tsv.bz2'), R('tatoeba', 'tha_sentences.tsv.bz2'),
                                               R('tatoeba', 'tha-eng_links.tsv.bz2'))
     if os.path.exists(R('tatoeba', 'eng-tha_links.tsv.bz2')):
@@ -326,25 +278,8 @@ def main():
                 a, b = map(int, line.split())
                 if a in eng and b in tha:
                     pairs.append((b, a))
-    seen_pairs = set()
-    paired_en = set()
-    for t, e_ in pairs:
-        if (t, e_) in seen_pairs:
-            continue
-        seen_pairs.add((t, e_))
-        paired_en.add(e_)
-        ex.add_pair(eng[e_], tha[t], 'tat')
-    with open(R('opus', 'alt', 'ALT.en-th.en'), encoding='utf-8') as fe, open(R('opus', 'alt', 'ALT.en-th.th'), encoding='utf-8') as ft:
-        for en_s, th_s in zip(fe, ft):
-            en_s, th_s = en_s.strip(), th_s.strip()
-            if 20 < len(en_s) <= 110 and th_s:
-                ex.add_pair(en_s, th_s, 'alt')
-    ex_en = Examples()   # English-only sentences for English-English
-    for i, s in eng.items():
-        if 15 < len(s) <= 90:
-            ex_en.add_pair(s, '', 'tat')
-    ex.build_thai_index()
-    log('examples', len(seen_pairs), 'tatoeba pairs,', len(ex.by_en), 'en words indexed;', len(ex_en.by_en), 'en-only')
+    thai_words = {v['th'] for v in vol} | {e['w'] for e in wkt_th} | {w for ws in thwn.values() for w in ws}
+    ex = examples.load_all(args.raw, examples.ThaiSegmenter(thai_words), eng, tha, list(dict.fromkeys(pairs)), log)
 
     # English Wiktionary (optional, large).
     wkt_en = defaultdict(list)
@@ -356,15 +291,22 @@ def main():
                 if k:
                     keep.add(norm(k))
         n = 0
-        for e in sources_wkt.english_entries(R('kaikki', 'english.jsonl.gz'), lambda w: norm(w) in keep or None):
-            wkt_en[norm(e['w'])].append(e)
+        for e in sources_wkt.english_entries(R('kaikki', 'english.jsonl.gz'), lambda w: True):
+            k = norm(e['w'])
+            if k not in keep:
+                # Beyond the core word lists, take ordinary lowercase words and short phrases that
+                # have a real definition: no names, inflected forms or archaic-only senses.
+                if e['fo'] or e['pos'] == 'name' or e['w'] != e['w'].lower() or len(e['w'].split()) > 3 \
+                        or not e['s'] or all(set(x.get('lb', [])) & {'obsolete', 'archaic', 'rare'} for x in e['s']):
+                    continue
+            wkt_en[k].append(e)
+            n += 1
+            if n % 200000 == 0:
+                log('  wiktionary english', n)
         # Common words first: drop proper nouns and capitalised variants when a lowercase entry exists.
         for k, lst in wkt_en.items():
             if any(e['w'] == k for e in lst):
                 wkt_en[k] = [e for e in lst if e['w'] == k or (e['pos'] != 'name' and e['w'].lower() != k)] or lst
-            n += 1
-            if n % 200000 == 0:
-                log('  wiktionary english', n)
         log('wiktionary english entries', n, 'keys', len(wkt_en))
 
     # ------------------------------------------------ English-English
@@ -398,9 +340,9 @@ def main():
             continue
         e = base_entry(head, 'en', k, freq_en, cmu, wk)
         e['b'] = blocks
-        exs = ex_en.for_en(k, 3, want_th=False)
+        exs = ex.for_en(head, [f[1] for f in e.get('f', [])], 8 if k in freq_en else 3, pairs=False)
         if exs:
-            e['ex'] = [x[:1] + ['', x[2]] for x in exs]
+            e['ex'] = exs
         en_entries[k] = e
     log('en-en entries', len(en_entries))
 
@@ -430,6 +372,10 @@ def main():
             if s['d'].lower() == key:
                 if sense.get('n') and not s.get('n'):
                     s['n'] = sense['n']
+                if sense.get('dt'):
+                    s['dt'] = 1
+                if 'q' in sense:
+                    s['q'] = min(s.get('q', 99), sense['q'])
                 return
         if len(lst) < limit:
             sense['src'] = src
@@ -437,6 +383,7 @@ def main():
             slot['srcs'].add(src)
 
     # Thai headwords from Wiktionary
+    first_pos = {}
     for e in wkt_th:
         slot = th_slot(e['w'])
         for s in e['s']:
@@ -451,12 +398,16 @@ def main():
         for s in e['ant']:
             add_unique(slot['ant'], s)
         slot['ety'] = slot['ety'] or e['ety']
-        # reverse: English gloss words -> Thai
-        for s in e['s'][:4]:
-            for piece in re.split(r'[;,]', s['d'])[:4]:
+        # reverse: English gloss words -> Thai. q ranks how central the match is:
+        # earlier senses and earlier pieces of a gloss are better, and a part of
+        # speech that is not the Thai word's main one is worse (ฉัน is mainly "I").
+        first_pos.setdefault(e['w'], e['pos'])
+        for si, s in enumerate(e['s'][:4]):
+            for pi, piece in enumerate(re.split(r'[;,:]', s['d'])[:5]):
                 k = english_key_from_gloss(piece)
                 if k:
-                    add_sense(en_slot(k), e['pos'], {'d': e['w'], 'n': s['d'] if len(s['d']) < 80 else None}, 'wkt', 10)
+                    q = si + pi + (3 if first_pos[e['w']] != e['pos'] else 0)
+                    add_sense(en_slot(k), e['pos'], {'d': e['w'], 'n': s['d'] if len(s['d']) < 80 else None, 'q': q}, 'wkt', 10)
 
     # Thai headwords from Volubilis, plus the reverse direction
     for v in vol:
@@ -471,11 +422,11 @@ def main():
                 add_unique(slot['cl'], c)
         for s in v['syn']:
             add_unique(slot['syn'], s)
-        for piece in v['en'][:5]:
+        for pi, piece in enumerate(v['en'][:5]):
             k = english_key_from_gloss(piece)
             if k:
                 note = piece if piece.lower() != k.lower() else None
-                add_sense(en_slot(k), v['pos'], strip_none({'d': v['th'], 'n': note}), 'vol', 14)
+                add_sense(en_slot(k), v['pos'], strip_none({'d': v['th'], 'n': note, 'q': pi}), 'vol', 14)
 
     # English Wiktionary Thai translations (when the dump is present)
     for k, lst in wkt_en.items():
@@ -484,7 +435,7 @@ def main():
                 continue
             slot = en_slot(e['w'])
             for th_word, roman, sense in e['th']:
-                add_sense(slot, e['pos'], strip_none({'d': th_word, 'n': sense or None, 'r': roman or None}), 'wkt')
+                add_sense(slot, e['pos'], strip_none({'d': th_word, 'n': sense or None, 'r': roman or None, 'dt': 1}), 'wkt')
                 rs = th_slot(th_word)
                 add_sense(rs, e['pos'], strip_none({'d': e['w'] + (f' ({sense})' if sense and len(sense) < 60 else '')}), 'wktr', 10)
                 if roman and not rs['rom']:
@@ -497,7 +448,7 @@ def main():
             if not th_words:
                 continue
             slot = en_slot(s['w'])
-            add_sense(slot, s['pos'], {'d': ', '.join(th_words), 'n': s['d'] if len(s['d']) < 90 else s['d'][:88] + '...'}, 'thwn', 16)
+            add_sense(slot, s['pos'], {'d': ', '.join(th_words), 'n': s['d'] if len(s['d']) < 90 else s['d'][:88] + '...', 'q': 2}, 'thwn', 16)
             for tw in th_words[:2]:
                 # Only for Thai words no other source explains: Thai WordNet is noisy.
                 if norm(tw) in et and et[norm(tw)]['l'] == 'th' and set(et[norm(tw)]['srcs']) <= {'thwn'}:
@@ -513,14 +464,30 @@ def main():
             # Common Thai words first, then by source quality.
             prio = {'wkt': 0, 'vol': 1, 'thwn': 2}
             for p in slot['order']:
-                slot['g'][p].sort(key=lambda s: (min(freq_th.get(w.strip(), 60000) for w in s['d'].split(',')) // 2000,
+                # Direct translations from Wiktionary's translation tables keep their order and come first.
+                # Then Thai words that several sources agree on, then how central the match was,
+                # then how common the Thai word is.
+                support = defaultdict(int)
+                for sn in slot['g'][p]:
+                    for w in {w.strip() for w in sn['d'].split(',')}:
+                        support[w] += 1
+                slot['g'][p].sort(key=lambda s: (0 if s.get('dt') else 1,
+                                                 -min(3, max(support[w.strip()] for w in s['d'].split(','))),
+                                                 s.get('q', 5),
+                                                 min(freq_th.get(w.strip(), 60000) for w in s['d'].split(',')) // 2000,
                                                  prio.get(s['src'], 3)))
+                for sn in slot['g'][p]:
+                    sn.pop('dt', None)
+                    sn.pop('q', None)
         groups = [{'pos': p, 's': group_senses(slot['g'][p], lang)} for p in slot['order']]
         e = {'w': slot['w'], 'l': lang}
         if lang == 'en':
             wk = wkt_en.get(k, [])
             e = base_entry(slot['w'], 'en', k, freq_en, cmu, wk)
-            exs = ex.for_en(k, 3)
+            forms = [f[1] for f in e.get('f', [])]
+            exs = ex.for_en(slot['w'], forms, 8 if k in freq_en else 3)
+            if len(exs) < 3:
+                exs += ex.for_en(slot['w'], forms, 3 - len(exs), pairs=False)
         else:
             ph = []
             rom = slot.get('rom') or slot.get('vrom')
@@ -542,14 +509,30 @@ def main():
                     e[f] = slot[f][:6]
             if slot.get('ety'):
                 e['ety'] = slot['ety']
-            exs = ex.for_th(slot['w'], 3)
-            # Wiktionary usage examples are already inline; add sentence examples only when none
+            exs = ex.for_th(slot['w'], 8 if slot['w'] in freq_th else 4)
         e['b'] = [{'src': 'mix', 'p': groups}]
         if exs:
             e['ex'] = exs
         e['src'] = sorted(slot['srcs'])
         enth[k] = e
-    log('en-th entries', len(enth), sum(1 for e in enth.values() if e['l'] == 'th'), 'thai')
+    # English words with no Thai translation yet: show their English definitions instead,
+    # so every English-English headword can be found in English-Thai too.
+    added = 0
+    for k, src in en_entries.items():
+        if k in enth:
+            continue
+        e = {x: v for x, v in src.items() if x not in ('b', 'ety')}
+        block = src['b'][0]
+        e['b'] = [{'src': block['src'], 'title': 'English definition',
+                   'p': [{'pos': p['pos'], 's': [{x: v for x, v in sn.items() if x not in ('syn', 'ant')} for sn in p['s'][:2]]}
+                         for p in block['p'][:2]]}]
+        e.pop('f', None)
+        if e.get('ex'):
+            e['ex'] = e['ex'][:3]
+        e['src'] = [block['src']]
+        enth[k] = e
+        added += 1
+    log('en-th entries', len(enth), sum(1 for e in enth.values() if e['l'] == 'th'), 'thai,', added, 'English-only')
 
     ranks_en = {norm(w): r for w, r in freq_en.items()}
     ranks_enth = dict(ranks_en)

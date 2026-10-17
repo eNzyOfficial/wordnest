@@ -3,7 +3,7 @@
 // Dictionary chunks (data/<id>/<build>/...): cache first, kept across app updates;
 // the build id in the path changes whenever the data does.
 // Bump VERSION whenever app files change so phones pick up the update.
-const VERSION = 'wordnest-v1';
+const VERSION = 'wordnest-v2';
 const DATA_CACHE = 'dict-data';
 const FILES = [
   './', 'index.html', 'style.css', 'manifest.json', 'sources.html',

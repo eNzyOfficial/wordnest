@@ -376,3 +376,11 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: r
   body { background: var(--bg2); }
   #app { background: var(--bg); box-shadow: var(--shadow); }
 }
+
+.voice-pick { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.voice-pick select {
+  max-width: 170px; font: inherit; font-size: 14px; color: var(--text); background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 5px 6px;
+}
+.spk.rec { color: var(--green-text); }
+.ex-src a { color: var(--text2); text-decoration: underline; }
