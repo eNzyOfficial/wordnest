@@ -358,6 +358,10 @@ def main():
         n = 0
         for e in sources_wkt.english_entries(R('kaikki', 'english.jsonl.gz'), lambda w: norm(w) in keep or None):
             wkt_en[norm(e['w'])].append(e)
+        # Common words first: drop proper nouns and capitalised variants when a lowercase entry exists.
+        for k, lst in wkt_en.items():
+            if any(e['w'] == k for e in lst):
+                wkt_en[k] = [e for e in lst if e['w'] == k or (e['pos'] != 'name' and e['w'].lower() != k)] or lst
             n += 1
             if n % 200000 == 0:
                 log('  wiktionary english', n)
@@ -637,7 +641,8 @@ def base_entry(head, lang, key, freq, cmu, wk):
             add_unique(forms, f)
     if forms:
         e['f'] = forms[:8]
-    fo = next((x['fo'] for x in wk if x.get('fo')), None)
+    # Only when the main (first) Wiktionary entry is itself just a form of another word.
+    fo = wk[0]['fo'] if wk and wk[0].get('fo') else None
     if fo and norm(fo) != key:
         e['fo'] = fo
     syn, ant = [], []

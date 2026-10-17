@@ -78,7 +78,7 @@ def sense_glosses(s):
     if not g:
         return None
     # Nested senses repeat the parent gloss first; keep the last, most specific one with the parent as context.
-    text = g[-1] if len(g) == 1 or len(g[0]) >= 60 else g[0].rstrip(' :') + ': ' + g[-1]
+    text = g[-1] if len(g) == 1 or len(g[0]) >= 60 else g[0].rstrip(' :.') + ': ' + g[-1]
     return clean(text)
 
 
@@ -104,12 +104,17 @@ def english_entries(path, keep):
             continue
         us, uk, audio = sounds_of(d)
         forms = []
+        allowed = {'noun': {'plural'}, 'verb': {'3rd person', 'present participle', 'past', 'past participle'},
+                   'adj': {'comparative', 'superlative'}, 'adv': {'comparative', 'superlative'}}.get(pos, set())
         for f in d.get('forms', []):
             label = form_label(f.get('tags', []))
-            if label and f.get('form') and f['form'] != word and [label, f['form']] not in forms:
-                forms.append([label, f['form']])
+            form = f.get('form') or ''
+            if label in allowed and re.fullmatch(r"[A-Za-z][A-Za-z' -]*", form) and form != word \
+                    and not any(x[0] == label for x in forms):
+                forms.append([label, form])
         senses = []
         form_of = None
+        all_form_of = all(set(x.get('tags', [])) & {'form-of', 'alt-of'} for x in d.get('senses', []) if x.get('glosses'))
         th = []
         for t in d.get('translations', []):
             if t.get('code') == 'th' and t.get('word'):
@@ -124,7 +129,7 @@ def english_entries(path, keep):
                 continue
             if 'form-of' in tags or 'alt-of' in tags:
                 target = (s.get('form_of') or s.get('alt_of') or [{}])[0].get('word')
-                if target and not form_of:
+                if target and not form_of and all_form_of:
                     form_of = target
                 if tags & BAD_SENSE_TAGS:
                     continue
@@ -157,7 +162,16 @@ def english_entries(path, keep):
         e_syn = [x['word'] for x in d.get('synonyms', []) if x.get('word')][:6]
         e_ant = [x['word'] for x in d.get('antonyms', []) if x.get('word')][:4]
         yield {'w': word, 'pos': pos, 'us': us, 'uk': uk, 'au': audio, 'f': forms[:6], 's': senses, 'th': dedupe_th(th),
-               'fo': form_of, 'syn': e_syn, 'ant': e_ant, 'ety': clean(d.get('etymology_text', ''))[:300]}
+               'fo': form_of, 'syn': e_syn, 'ant': e_ant, 'ety': etymology(d.get('etymology_text', ''))[:300]}
+
+
+def etymology(text):
+    """Drop the 'Etymology tree ...' widget text Wiktextract sometimes captures."""
+    text = clean(text)
+    if text.startswith('Etymology tree'):
+        m = re.search(r'\b(From|Borrowed|Inherited|Learned borrowing|Coined|Compound|Clipping|Blend)\b', text)
+        text = text[m.start():] if m else ''
+    return text
 
 
 def dedupe_th(th):
@@ -220,4 +234,4 @@ def thai_entries(path):
                'fo': form_of,
                'syn': [x['word'] for x in d.get('synonyms', []) if x.get('word')][:6],
                'ant': [x['word'] for x in d.get('antonyms', []) if x.get('word')][:4],
-               'ety': clean(d.get('etymology_text', ''))[:200]}
+               'ety': etymology(d.get('etymology_text', ''))[:200]}
