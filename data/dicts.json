@@ -1,0 +1,47 @@
+{
+ "generated": "2026-10-17",
+ "wiktionaryEnglish": false,
+ "dicts": [
+  {
+   "id": "en-th",
+   "title": "English-Thai",
+   "desc": "English to Thai and Thai to English",
+   "build": "5e4c902be7",
+   "count": 251240,
+   "bytes": 21746024,
+   "files": 1042,
+   "sources": [
+    "wkt",
+    "vol",
+    "thwn",
+    "tat",
+    "alt",
+    "cmu",
+    "freq"
+   ],
+   "langs": [
+    "en",
+    "th"
+   ]
+  },
+  {
+   "id": "en-en",
+   "title": "English-English",
+   "desc": "English definitions",
+   "build": "328cc18693",
+   "count": 127306,
+   "bytes": 13738139,
+   "files": 524,
+   "sources": [
+    "wkt",
+    "wn",
+    "cmu",
+    "tat",
+    "freq"
+   ],
+   "langs": [
+    "en"
+   ]
+  }
+ ]
+}

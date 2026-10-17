@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2cc46d"/><stop offset="1" stop-color="#169a4f"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <!-- open book -->
+  <path d="M256 168c-34-26-82-36-136-32v196c54-4 102 6 136 32z" fill="#fff"/>
+  <path d="M256 168c34-26 82-36 136-32v196c-54-4-102 6-136 32z" fill="#eafff2"/>
+  <!-- leaf sprouting from the spine -->
+  <path d="M256 170c-4-46 18-82 64-96 6 46-18 84-64 96z" fill="#fff"/>
+  <path d="M258 166c8-26 24-48 50-70" stroke="#169a4f" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <!-- text lines -->
+  <path d="M152 200c30 0 56 6 78 18M152 244c30 0 56 6 78 18M152 288c30 0 56 6 78 18" stroke="#9fdcb9" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <path d="M360 200c-30 0-56 6-78 18M360 244c-30 0-56 6-78 18M360 288c-30 0-56 6-78 18" stroke="#9fdcb9" stroke-width="12" stroke-linecap="round" fill="none"/>
+</svg>

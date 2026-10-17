@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Wordnest">
+<meta name="theme-color" content="#1fae5b">
+<meta name="description" content="Offline English-Thai and English-English dictionary built from open data.">
+<title>Wordnest</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css?v=1">
+<script>
+  // Apply the saved theme before first paint to avoid a flash.
+  try {
+    const t = JSON.parse(localStorage.getItem('wn:settings') || '{}').theme || 'system';
+    const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  } catch {}
+</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 9h15l-4-4M20 15H5l4 4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+    <symbol id="i-speak" viewBox="0 0 24 24"><path d="M4 10v4h3.5L12 18V6L7.5 10z"/><path d="M15.5 9a4 4 0 010 6M18 6.5a7.5 7.5 0 010 11"/></symbol>
+    <symbol id="i-mark" viewBox="0 0 24 24"><path d="M7 4h10v16l-5-4-5 4z"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h9.5A3.5 3.5 0 0118 8v11.5H8.5A3.5 3.5 0 015 16z"/><path d="M5 16a3.5 3.5 0 013.5-3.5H18"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4L18 18M6 18l1.6-1.6M16.4 7.6L18 6"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 00.5-8 5.5 5.5 0 00-10.6 1.5A3.3 3.3 0 007 18z"/><path d="M12 11v5M9.8 13.8L12 16l2.2-2.2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8v.2"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></symbol>
+    <symbol id="i-cards" viewBox="0 0 24 24"><rect x="4" y="7" width="13" height="12" rx="2"/><path d="M8 4h10a2 2 0 012 2v10"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 4v11M8 8l4-4 4 4M5 13v6h14v-6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 011-1h9"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  </defs>
+</svg>
+
+<div id="app">
+  <!-- Green search header, shared by all dictionary screens -->
+  <header class="topbar" id="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Menu"><svg><use href="#i-menu"/></svg></button>
+    <button class="icon-btn hidden" id="backBtn" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+    <form class="searchbox" id="searchForm" role="search" autocomplete="off">
+      <input id="q" type="search" enterkeyhint="search" placeholder="Search English or Thai" spellcheck="false" autocapitalize="off" autocorrect="off" aria-label="Search">
+      <button type="button" class="clear hidden" id="clearBtn" aria-label="Clear"><svg><use href="#i-x"/></svg></button>
+      <button type="submit" class="go" aria-label="Search"><svg><use href="#i-search"/></svg></button>
+    </form>
+    <button class="pair-badge" id="pairBadge" aria-label="Choose dictionary">EN-TH</button>
+    <h1 class="topbar-title hidden" id="topTitle"></h1>
+    <button class="text-btn hidden" id="topAction"></button>
+  </header>
+
+  <!-- Language pair bar -->
+  <button class="pairbar" id="pairbar" aria-label="Choose dictionary">
+    <span id="pairA">English</span><svg class="swap"><use href="#i-swap"/></svg><span id="pairB">Thai</span>
+  </button>
+
+  <main id="main">
+    <section class="view" id="v-home"></section>
+    <section class="view" id="v-suggest"></section>
+    <section class="view" id="v-word"></section>
+    <section class="view" id="v-examples"></section>
+    <section class="view" id="v-cards"></section>
+    <section class="view" id="v-history"></section>
+    <section class="view" id="v-study"></section>
+    <section class="view" id="v-settings"></section>
+    <section class="view" id="v-offline"></section>
+    <section class="view" id="v-sources"></section>
+  </main>
+
+  <div class="bottombar hidden" id="bottombar"></div>
+</div>
+
+<!-- Drawer -->
+<div class="scrim" id="scrim"></div>
+<nav class="drawer" id="drawer" aria-label="Menu">
+  <div class="drawer-head">
+    <div class="drawer-brand"><img src="icons/icon.svg" alt=""><span>Wordnest</span></div>
+    <button class="icon-btn" data-route="#/settings" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
+  </div>
+  <button class="drawer-pair" id="drawerPair">English &lt;-&gt; Thai</button>
+  <div class="drawer-items">
+    <a data-route="#/" class="drawer-item"><svg><use href="#i-search"/></svg>Dictionary</a>
+    <a data-route="#/cards" class="drawer-item"><svg><use href="#i-mark"/></svg>Word card<span class="count" id="cardCount"></span></a>
+    <a data-route="#/study" class="drawer-item"><svg><use href="#i-cards"/></svg>Flashcards</a>
+    <a data-route="#/history" class="drawer-item"><svg><use href="#i-clock"/></svg>History</a>
+    <a data-route="#/offline" class="drawer-item"><svg><use href="#i-cloud"/></svg>Offline dictionaries</a>
+    <a data-route="#/settings" class="drawer-item"><svg><use href="#i-gear"/></svg>Settings</a>
+    <a data-route="#/sources" class="drawer-item"><svg><use href="#i-info"/></svg>Sources and licences</a>
+  </div>
+  <label class="drawer-foot">Keep screen on<span class="switch"><input type="checkbox" id="keepScreen"><i></i></span></label>
+</nav>
+
+<!-- Dictionary picker -->
+<div class="sheet" id="pairSheet" role="dialog" aria-label="Choose dictionary">
+  <div class="sheet-card"><h3>Dictionary</h3><div id="pairList"></div></div>
+</div>
+
+<!-- Quick lookup panel (tap a word in an example) -->
+<div class="peek" id="peek" role="dialog" aria-live="polite"></div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/core.js?v=1"></script>
+<script src="js/data.js?v=1"></script>
+<script src="js/search.js?v=1"></script>
+<script src="js/speech.js?v=1"></script>
+<script src="js/word.js?v=1"></script>
+<script src="js/views.js?v=1"></script>
+<script src="js/app.js?v=1"></script>
+</body>
+</html>
