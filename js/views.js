@@ -164,6 +164,8 @@ const views = {
       <div class="set-group"><div class="set-title">Dictionary</div>
         <div class="set-row"><span>Pronunciation</span>${seg('accent', [['us', 'US'], ['uk', 'UK']])}</div>
         <label class="set-row"><span>Show examples under definitions</span><span class="switch"><input type="checkbox" data-toggle="examples" ${settings.get('examples') ? 'checked' : ''}><i></i></span></label>
+        <label class="set-row"><span>Pictures for nouns (online)</span><span class="switch"><input type="checkbox" data-toggle="pictures" ${settings.get('pictures') ? 'checked' : ''}><i></i></span></label>
+        <label class="set-row"><span>Related words and rhymes (online)</span><span class="switch"><input type="checkbox" data-toggle="webExtras" ${settings.get('webExtras') ? 'checked' : ''}><i></i></span></label>
         <label class="set-row"><span>Keep screen on</span><span class="switch"><input type="checkbox" data-toggle="keepScreen" ${settings.get('keepScreen') ? 'checked' : ''}><i></i></span></label>
         <a class="set-row link" href="#/offline"><span>Offline dictionaries</span>${icon('chev', 'chev')}</a></div>
       <div class="set-group"><div class="set-title">Voice</div>
@@ -227,9 +229,21 @@ const views = {
         <div class="bar"><i style="width:0"></i></div>
         <div class="dl-row"><span class="dl-status muted">Checking...</span><span><button class="btn sm ghost dl-remove hidden">Remove</button><button class="btn sm dl-get">Download</button></span></div>
       </div>`).join('')}
+      <div class="set-group dl" id="audioBox">
+        <div class="dl-head"><b>Pronunciations</b><span class="muted" id="audioCount"></span></div>
+        <div class="dl-desc">Recorded pronunciations from Wikimedia Commons. Words you play or save to your Word card are kept automatically. You can also save them ahead of time. Without a recording, your device voice reads the word, which also works offline.</div>
+        <div class="bar"><i style="width:0" id="audioBar"></i></div>
+        <div class="dl-row"><span class="dl-status muted" id="audioStatus"></span><span></span></div>
+        <div class="dl-row stack">
+          <button class="btn sm ghost" id="audioCards">Save Word card recordings</button>
+          ${data.audioTop ? `<button class="btn sm" id="audioTop">Save ${data.audioTop.count.toLocaleString()} common words (about ${fmtBytes(data.audioTop.bytes)})</button>` : ''}
+          <button class="btn sm ghost" id="audioClear">Remove saved recordings</button>
+        </div>
+      </div>
       ${est ? `<p class="set-note">Storage used by this app: ${fmtBytes(est.usage || 0)}${est.quota ? ` of ${fmtBytes(est.quota)} available` : ''}.</p>` : ''}
     </div>`;
-    for (const box of $$('.dl', el)) {
+    this.audioOffline(el);
+    for (const box of $$('.dl[data-id]', el)) {
       const id = box.dataset.id;
       const bar = $('.bar i', box), status = $('.dl-status', box), get = $('.dl-get', box), rm = $('.dl-remove', box);
       const refresh = async () => {
@@ -259,6 +273,42 @@ const views = {
       };
       rm.onclick = async () => { await data.removeOffline(id); data.memo.clear(); refresh(); toast('Removed'); };
     }
+  },
+
+  async audioOffline(el) {
+    const count = $('#audioCount', el), bar = $('#audioBar', el), status = $('#audioStatus', el);
+    const refresh = async () => { const n = await speech.savedRecordings(); count.textContent = `${n.toLocaleString()} saved`; };
+    refresh();
+    let ctrl = null;
+    const run = async (btn, label, paths) => {
+      if (ctrl) { ctrl.abort(); return; }
+      if (!navigator.onLine) { toast('Connect to the internet to save recordings'); return; }
+      ctrl = new AbortController();
+      btn.textContent = 'Stop';
+      navigator.storage?.persist?.();
+      try {
+        await speech.saveRecordings(paths, (n, t) => { bar.style.width = (100 * n / t) + '%'; status.textContent = `Saving ${n} of ${t}`; }, ctrl.signal);
+        status.textContent = 'Saved'; toast('Recordings saved for offline use');
+      } catch { status.textContent = 'Stopped'; }
+      ctrl = null; btn.textContent = label; refresh();
+    };
+    const cardsBtn = $('#audioCards', el);
+    cardsBtn.onclick = () => {
+      const paths = cards.list().flatMap(c => c.au || []);
+      if (!paths.length) { toast('No recordings in your Word card yet'); return; }
+      run(cardsBtn, 'Save Word card recordings', paths);
+    };
+    const topBtn = $('#audioTop', el);
+    if (topBtn) {
+      const label = topBtn.textContent;
+      topBtn.onclick = async () => {
+        const list = await data.json(data.audioTop.path).catch(() => null);
+        if (!list) { toast('Could not load the list of recordings'); return; }
+        const uk = settings.get('accent') === 'uk';
+        run(topBtn, label, list.map(r => uk ? r[2] : r[1]));
+      };
+    }
+    $('#audioClear', el).onclick = async () => { await caches.delete(AUDIO_CACHE); bar.style.width = '0'; status.textContent = ''; refresh(); toast('Removed'); };
   },
 
   // ---------------------------------------------------------------- sources

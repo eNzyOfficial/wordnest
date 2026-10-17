@@ -26,9 +26,29 @@ SOURCES = [
      'English-Thai example sentences from the Asian Language Treebank parallel corpus, via OPUS.'),
     ('FrequencyWords', 'https://github.com/hermitdave/FrequencyWords', 'CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/',
      'Word frequency lists by Hermit Dave, used to rank suggestions, show frequency stars and pick the word of the day.'),
-    ('Wikimedia Commons', 'https://commons.wikimedia.org', 'Per file', None,
-     'Recorded pronunciations are played from Wikimedia Commons when you are online and are not stored in the app. '
-     'Each file page on Commons lists its author and licence. Offline, your device voice reads the word instead.'),
+    ('Wikimedia Commons recordings', 'https://commons.wikimedia.org', 'Per file (mostly CC BY-SA)', None,
+     'Recorded pronunciations listed by Wiktionary. They are fetched from Wikimedia Commons when first played and then kept on your '
+     'device for offline use; you can also save the recordings of your Word card or of the 3,000 most common English words. '
+     'Each word page names the author and licence of its recordings and links the file page.'),
+    ('Device speech', None, 'Built into your device', None,
+     'When there is no recording, your browser speech engine reads words and sentences aloud (English, Thai, Japanese, Korean and Chinese '
+     'voices, depending on what your device has installed). It works offline and sends nothing over the network.'),
+]
+
+ONLINE = [
+    ('Free Dictionary API', 'https://dictionaryapi.dev/', 'Data from Wiktionary, CC BY-SA 3.0',
+     'Extra phonetic spellings, pronunciation audio and synonyms on English word pages. Online only; the section is left out when the '
+     'service is unreachable. Definitions from Wiktionary via Free Dictionary API.'),
+    ('Datamuse API', 'https://www.datamuse.com/api/', 'Free use, attribution requested',
+     'Related words, rhymes and sounds-like words on English word pages. Word suggestions powered by the Datamuse API. Online only.'),
+    ('Tatoeba API', 'https://api.tatoeba.org/', 'Sentences CC BY 2.0 FR; recordings per file',
+     'The "More from Tatoeba" button on the examples screen loads more sentences and recordings. Each recording shows its speaker and licence; '
+     'recordings you play are kept on your device for offline listening.'),
+    ('Wikidata', 'https://www.wikidata.org/', 'CC0',
+     'Links a noun to its picture (property P18). Online only.'),
+    ('Wikipedia and Wikimedia Commons pictures', 'https://commons.wikimedia.org/', 'Per image (free licences only)',
+     'Optional pictures for nouns (switch off in Settings). Each picture is credited with its author, licence and a link to the file page. '
+     'Images that are not freely licensed or not hosted on Commons are never shown. Online only, not stored by the app.'),
 ]
 
 NOTICES = [('Princeton WordNet and Open English WordNet', 'princeton-wordnet.txt'),
@@ -44,7 +64,11 @@ def main():
            'Wordnest is an independent project and is not affiliated with any of these sources or with any other dictionary app.</p>']
     for name, url, lic, lic_url, desc in SOURCES:
         lic_html = f'<a href="{lic_url}">{html.escape(lic)}</a>' if lic_url else html.escape(lic)
-        out.append(f'<h3><a href="{url}">{html.escape(name)}</a></h3><p>{desc}<br><small>Licence: {lic_html}</small></p>')
+        title = f'<a href="{url}">{html.escape(name)}</a>' if url else html.escape(name)
+        out.append(f'<h3>{title}</h3><p>{desc}<br><small>Licence: {lic_html}</small></p>')
+    out.append('<h2>Online extras</h2><p>These are used only when you are online and the app keeps working without them.</p>')
+    for name, url, lic, desc in ONLINE:
+        out.append(f'<h3><a href="{url}">{html.escape(name)}</a></h3><p>{desc}<br><small>Licence: {html.escape(lic)}</small></p>')
     out.append('<h2>Licence notices</h2>')
     for title, fn in NOTICES:
         with open(os.path.join(ROOT, 'licences', fn), encoding='utf-8') as f:

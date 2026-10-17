@@ -22,7 +22,27 @@ The same information is shown in the app under Menu > Sources and licences
 | Tatoeba sentence recordings (linked, not bundled) | Human voice for English example sentences, streamed when online | Per recording: CC BY-NC-ND 3.0, CC BY-NC 4.0, CC BY 4.0, CC BY-SA 4.0 or CC0 | No | Speaker name and licence shown under each recorded example, linking to their Tatoeba profile. Played unmodified in a free, non-commercial app; recordings with no reuse licence are skipped. If the app is ever monetised, drop the NC/ND recordings. |
 | ALT Parallel Corpus (NICT, via OPUS) | English-Thai example sentences | CC BY 4.0 | No | "Asian Language Treebank (ALT) Parallel Corpus, NICT, CC BY 4.0, via OPUS (https://opus.nlpl.eu)" |
 | FrequencyWords (Hermit Dave), 2018 en and th 50k lists | Ranking suggestions, frequency stars, word of the day | CC BY-SA 4.0 (content) | Yes | "FrequencyWords by Hermit Dave, CC BY-SA 4.0, https://github.com/hermitdave/FrequencyWords" |
-| Wikimedia Commons audio (linked, not bundled) | Recorded pronunciations, streamed when online | Per file (mostly CC BY-SA) | Per file | Played from upload.wikimedia.org; each file page on Commons names its author and licence. Offline, the device's own voice is used instead. |
+| Wikimedia Commons recordings (not bundled; cached on the device) | Recorded pronunciations listed by Wiktionary (English, and Thai where available) | Per file (mostly CC BY-SA) | Per file | Fetched from upload.wikimedia.org on first play and kept in the browser cache for offline use. Users can also save the recordings of their Word card or of the 3,000 most common English words (about 42 MB, list in `data/en-en/<build>/audio-top.json`). Each word page shows author and licence for its recordings (Commons API) and links the file page. |
+| Device speech synthesis | Fallback voice for words and sentences in English, Thai, Japanese, Korean and Chinese | Part of the user's browser or OS | n/a | No data leaves the device; works offline. Novelty voices are skipped and enhanced voices preferred; users can pick a voice in Settings. |
+
+## Online-only services
+
+Called directly from the user's browser (all allow cross-origin requests), never
+bundled, and the app degrades gracefully without them: offline, or when a
+service fails, its section is simply left out. Notes from checking the terms
+on 2026-10-17 are in `notes/online-apis.md`.
+
+| Service | Used for | Licence / terms | Attribution shown |
+|---|---|---|---|
+| Free Dictionary API (dictionaryapi.dev) | Extra phonetics, pronunciation audio, synonyms and antonyms on English pages | Data from Wiktionary, CC BY-SA 3.0; code GPL-3.0; no stated limits. Unmaintained and often down (HTTP 522 on 2026-10-17), so the app times out after 5 s and hides the section. | "From ... Free Dictionary API, online only" under the section; Sources page: "Definitions from Wiktionary via Free Dictionary API" |
+| Datamuse API | Related words, rhymes, sounds-like | Free, no key, up to 100,000 requests per day; attribution requested. From 2027-02-01 a key will be required: request one and add it to `js/online.js` before then. | "From Datamuse" under the section; Sources page: "Word suggestions powered by the Datamuse API" |
+| Tatoeba API v1 | "More from Tatoeba" sentences with recordings on the examples screen; recordings of bundled examples | Sentences CC BY 2.0 FR (some CC0); recordings per file, credited with speaker and licence | Under each example: source, speaker, licence |
+| Wikidata API | Picture for a noun via its item's image (P18); item ids come from Wiktionary sense links | CC0 | Link to the item in the picture credit |
+| Wikipedia REST API (page summary) | Picture fallback: lead image of the article with the same title | Text CC BY-SA; only Commons-hosted, freely licensed images are used | "via Wikipedia: <article>" in the picture credit |
+| Wikimedia Commons API (imageinfo) | Author, licence and thumbnail of pictures and recordings | Per file | "Picture: <author>, <licence>, via ..." and "Recordings: <author>, <licence>" |
+
+Wikimedia requests carry `Api-User-Agent: Wordnest/1.0 (site URL)` as Wikimedia asks of
+browser clients. Pictures can be switched off in Settings, as can the related-words section.
 
 ## Download URLs and versions
 

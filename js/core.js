@@ -1,5 +1,5 @@
 // Shared helpers: storage, settings, word card, history, toast.
-const APP_VERSION = '3';
+const APP_VERSION = '4';
 
 const store = {
   get(key, fallback) {
@@ -16,7 +16,7 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const icon = (name, cls = '') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
 
-const DEFAULT_SETTINGS = { theme: 'system', dict: 'en-th', accent: 'us', examples: true, textSize: 'm', keepScreen: false, voiceEn: '', voiceTh: '' };
+const DEFAULT_SETTINGS = { theme: 'system', dict: 'en-th', accent: 'us', examples: true, textSize: 'm', keepScreen: false, voiceEn: '', voiceTh: '', pictures: true, webExtras: true };
 const settings = {
   all: { ...DEFAULT_SETTINGS, ...store.get('settings', {}) },
   get(k) { return this.all[k]; },

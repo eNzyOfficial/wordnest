@@ -384,3 +384,19 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: r
 }
 .spk.rec { color: var(--green-text); }
 .ex-src a { color: var(--text2); text-decoration: underline; }
+
+/* online extras */
+.pic { margin: 0; border-bottom: 8px solid var(--bg2); background: var(--bg2); }
+.pic img { display: block; width: 100%; max-height: 260px; object-fit: cover; background: var(--bg3); }
+.pic figcaption { font-size: 11.5px; color: var(--text3); padding: 6px 16px 8px; background: var(--bg); line-height: 1.4; }
+.pic figcaption a, .srcline a, #xAudio a { color: var(--text2); }
+#xAudio { display: inline-block; margin-top: 4px; }
+.web-row { margin-top: 10px; }
+.web-label { font-size: 12.5px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+.web .prons { margin-top: 2px; }
+.srcline.in { padding: 10px 0 0; }
+.small { font-size: 14px; margin: 0; }
+.loading.sm { padding: 16px; }
+.more-wrap { padding: 16px; text-align: center; }
+.dl-row.stack { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 10px; }
+.btn:disabled { opacity: .6; }

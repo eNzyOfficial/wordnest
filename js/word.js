@@ -108,6 +108,7 @@ function renderWord(dictId, key, entry) {
   const srcs = [...new Set([...(entry.src || []), ...(entry.b || []).map(b => b.src)].filter(s => s && s !== 'mix').map(s => SRC_NAMES[s]))];
   for (const e of entry.ex || []) srcs.push((SRC_NAMES[e[2]] || e[2]).replace(/ \(.*\)$/, ''));
 
+  const slot = extras.slots(entry);
   return `<article class="entry${settings.get('examples') ? '' : ' no-ex'}" data-l="${entry.l}">
     <div class="entry-head">
       <div class="hw-row">
@@ -118,14 +119,15 @@ function renderWord(dictId, key, entry) {
       <div class="prons">${prons || noPron}</div>
       ${formOf}
     </div>
+    ${slot.picture}
     ${forms}
     <div class="sec defs">
       <div class="sec-head"><h3>Definition</h3>
         <label class="ex-toggle">Examples<span class="switch"><input type="checkbox" id="exToggle" ${settings.get('examples') ? 'checked' : ''}><i></i></span></label></div>
       ${defs}
     </div>
-    ${cls}${syn}${ant}${exs}${ety}
-    <p class="srcline">Source: ${[...new Set(srcs)].map(esc).join(', ')}. <a href="#/sources">Licences</a></p>
+    ${cls}${syn}${ant}${exs}${slot.web}${ety}
+    <p class="srcline">Source: ${[...new Set(srcs)].map(esc).join(', ')}. <a href="#/sources">Licences</a>${entry.au?.length ? '<br><span id="xAudio"></span>' : ''}</p>
   </article>`;
 }
 
@@ -135,7 +137,8 @@ function renderExamples(entry) {
     list.push(Array.isArray(x) ? [x[0], x[1], s.src || b.src] : [x, '', b.src]);
   }
   return `<div class="subhead">${esc(entry.w)} <span>${list.length} examples</span></div>
-    <ul class="exlist big">${list.map(e => exampleRow(e, entry)).join('') || '<li class="empty">No examples yet.</li>'}</ul>`;
+    <ul class="exlist big">${list.map(e => exampleRow(e, entry)).join('') || '<li class="empty">No examples in the offline dictionary yet.</li>'}</ul>
+    <div class="more-wrap"><button class="btn ghost more-tat" id="moreTatoeba">More from Tatoeba</button></div>`;
 }
 
 function exampleCount(entry) {

@@ -6,10 +6,10 @@
    "id": "en-th",
    "title": "English-Thai",
    "desc": "English to Thai and Thai to English",
-   "build": "7eb9ef578a",
+   "build": "03c5d4216e",
    "count": 789139,
-   "bytes": 84369073,
-   "files": 3724,
+   "bytes": 84417827,
+   "files": 3726,
    "sources": [
     "wkt",
     "vol",
@@ -28,9 +28,9 @@
    "id": "en-en",
    "title": "English-English",
    "desc": "English definitions",
-   "build": "9be2aa9eb0",
+   "build": "1ac0156274",
    "count": 634018,
-   "bytes": 80020908,
+   "bytes": 80070005,
    "files": 3316,
    "sources": [
     "wkt",
@@ -43,5 +43,10 @@
     "en"
    ]
   }
- ]
+ ],
+ "audioTop": {
+  "path": "data/en-en/1ac0156274/audio-top.json",
+  "count": 3000,
+  "bytes": 42000000
+ }
 }

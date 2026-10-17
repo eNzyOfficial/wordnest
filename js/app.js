@@ -56,6 +56,7 @@ async function openWord(dictId, key) {
   $('#bottombar').innerHTML = `<a href="#/x/${encodeURIComponent(dictId)}/${encodeURIComponent(key)}">Usage examples${count ? ` <b>${count}</b>` : ''} ${icon('chev')}</a>`;
   $('#bottombar').classList.toggle('hidden', !count);
   recent.add({ d: dictId, k: key, w: entry.w, g: glossOf(entry), ph: firstPron(entry) });
+  extras.attach(el, dictId, entry);
   document.title = entry.w + ' - Wordnest';
 }
 
@@ -63,7 +64,10 @@ async function openExamples(dictId, key) {
   show('examples');
   const entry = current.key === key && current.entry ? current.entry : await data.entry(dictId, key).catch(() => null);
   $('#v-examples').innerHTML = entry ? renderExamples(entry) : '<p class="empty">Not available offline.</p>';
-  if (entry) current = { ...current, dict: dictId, key, entry };
+  if (entry) {
+    current = { ...current, dict: dictId, key, entry };
+    $('#moreTatoeba').onclick = e => extras.tatoebaMore($('#v-examples .exlist'), e.currentTarget, entry, dictId);
+  }
 }
 
 // ---------------------------------------------------------------- search box
@@ -176,6 +180,7 @@ document.addEventListener('click', async e => {
   const spk = t.closest('.spk');
   if (spk) {
     e.preventDefault(); e.stopPropagation();
+    if (spk.classList.contains('web-audio')) { speech.playUrl(spk.dataset.src, spk, () => speech.say(spk.dataset.say, 'en', settings.get('accent'), spk)); return; }
     if (spk.closest('.ex, .sx, .wotd-ex')) { speech.playSentence(spk.dataset.say, spk.dataset.lang, spk.dataset.audio, spk); return; }
     const owner = spk.closest('.entry-head') ? current.entry : (speechCache.get(spk.closest('.row, .wotd-body')) || null);
     speech.play(spk.dataset.say, spk.dataset.lang, spk.dataset.region ?? settings.get('accent'), owner?.au, spk);
@@ -190,7 +195,9 @@ document.addEventListener('click', async e => {
 
   if (t.closest('#markBtn')) {
     const { dict, key, entry } = current;
-    const on = cards.toggle({ d: dict, k: key, w: entry.w, g: glossOf(entry), ph: firstPron(entry) });
+    const on = cards.toggle({ d: dict, k: key, w: entry.w, g: glossOf(entry), ph: firstPron(entry), au: entry.au?.map(a => a[1]) });
+    // Keep the recordings of saved words for offline listening.
+    if (on && entry.au?.length && navigator.onLine) speech.saveRecordings(entry.au.map(a => a[1])).catch(() => {});
     const b = $('#markBtn');
     b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
     toast(on ? 'Saved to Word card' : 'Removed from Word card');

@@ -19,6 +19,7 @@ Entry schema (keys kept short to save space):
   syn, ant                related words
   ex  [[sentence, translation, src]] usage examples
   ety etymology
+  wd  Wikidata item of the main noun sense (for an optional picture)
 """
 import argparse
 import gzip
@@ -546,8 +547,25 @@ def main():
         write_dict('en-en', 'English-English', en_entries, ranks_en, args.out,
                    'English definitions', ['wkt', 'wn', 'cmu', 'tat', 'freq'], ['en']),
     ]
+    # Recordings of the most common English words, for the optional offline audio download.
+    top_audio = []
+    for w, r in sorted(freq_en.items(), key=lambda kv: kv[1]):
+        e = en_entries.get(norm(w))
+        if not e or not e.get('au'):
+            continue
+        by = {a[0]: a[1] for a in e['au']}
+        any_path = e['au'][0][1]
+        top_audio.append([norm(w), by.get('us', any_path), by.get('uk', any_path)])
+        if len(top_audio) >= 3000:
+            break
+    en_en = next(d for d in dicts if d['id'] == 'en-en')
+    audio_path = f"data/en-en/{en_en['build']}/audio-top.json"
+    with open(os.path.join(ROOT, audio_path), 'w', encoding='utf-8') as f:
+        json.dump(top_audio, f, ensure_ascii=False, separators=(',', ':'))
+    log('common-word recordings listed', len(top_audio))
     with open(os.path.join(args.out, 'dicts.json'), 'w', encoding='utf-8') as f:
-        json.dump({'generated': time.strftime('%Y-%m-%d'), 'wiktionaryEnglish': not args.no_wkt_en, 'dicts': dicts},
+        json.dump({'generated': time.strftime('%Y-%m-%d'), 'wiktionaryEnglish': not args.no_wkt_en, 'dicts': dicts,
+                   'audioTop': {'path': audio_path, 'count': len(top_audio), 'bytes': len(top_audio) * 14000}},
                   f, ensure_ascii=False, indent=1)
     log('done', sum(d['bytes'] for d in dicts) / 1e6, 'MB total')
 
@@ -638,6 +656,9 @@ def base_entry(head, lang, key, freq, cmu, wk):
         e['syn'] = syn[:8]
     if ant:
         e['ant'] = ant[:6]
+    wd = next((x['wd'] for x in wk if x.get('wd')), None)
+    if wd:
+        e['wd'] = wd
     ety = next((x['ety'] for x in wk if x.get('ety')), None)
     if ety:
         e['ety'] = ety

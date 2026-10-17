@@ -16,7 +16,9 @@ const data = {
   async init() {
     const res = await fetch('data/dicts.json', { cache: 'no-cache' }).catch(() => null)
       || await caches.match('data/dicts.json');
-    this.dicts = (await res.json()).dicts;
+    const info = await res.json();
+    this.dicts = info.dicts;
+    this.audioTop = info.audioTop || null;
     await Promise.all(this.dicts.map(async d => { this.meta[d.id] = await this.json(this.base(d.id) + 'meta.json'); }));
     this.cleanOldBuilds();
     return this.dicts;

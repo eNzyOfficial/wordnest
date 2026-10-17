@@ -167,7 +167,14 @@ def english_entries(path, keep):
         # Entry-level synonyms/antonyms when senses have none
         e_syn = [x['word'] for x in d.get('synonyms', []) if x.get('word')][:6]
         e_ant = [x['word'] for x in d.get('antonyms', []) if x.get('word')][:4]
-        yield {'w': word, 'pos': pos, 'us': us, 'uk': uk, 'au': audio, 'f': forms[:6], 's': senses, 'th': dedupe_th(th),
+        # Wikidata item of the main noun sense, used for an optional picture.
+        wd = None
+        if pos == 'noun':
+            for x in d.get('senses', [])[:2]:
+                if x.get('wikidata'):
+                    wd = x['wikidata'][0]
+                    break
+        yield {'w': word, 'pos': pos, 'us': us, 'uk': uk, 'au': audio, 'wd': wd, 'f': forms[:6], 's': senses, 'th': dedupe_th(th),
                'fo': form_of, 'syn': e_syn, 'ant': e_ant, 'ety': etymology(d.get('etymology_text', ''))[:300]}
 
 
